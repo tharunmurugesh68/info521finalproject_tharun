@@ -1,0 +1,710 @@
+---
+title: "INFO521 - Intro to ML - Project Final Report - Analysis and Prediction of Earthquake Data"
+author: "Tharun Murugesh R & Shanmuganathan C"
+date: "06/12/2022"
+output: html_document
+---
+* * *
+# Introduction 
+
+##  Research Problem
+
+### Earthquakes have been the cause of mass destruction to life and property every single year across the world.
+### The seismic activity due to an earthquake causes other natural disasters like floods, landslides, tsunamis, avalanches etc.
+### Despite the advancement of technology that allow structures to withstand an earthquake, it still remains a feared natural disaster among all.
+### An earthquake is generally characterized by the depth and the magnitude with the depth being significant as the depth of the earthquake gives us insights into the information on the Earth’s structure, more specifically the mechanics and characteristics of the deformation of the Earth’s surface and the tectonic setting where the earthquake is occurring by plotting the location and the depth. 
+### The magnitude or the size of the earthquake is measured by a seismograph. Besides giving an insight into the intensity of the earthquake, it may be able to explain the roughness of the fault surfaces.
+* * *
+## Related Works (Literature Survey)
+
+### In [1], Asim, Basit et al. used eight seismic indicators in the earthquake catalog of the Hindukush region to predict future earthquakes in the region.The authors used four machine learning techniques including Pattern Recognition Neural Network, Recurrent Neural Network, Random Forest and Linear Programming Boost Ensemble classifier. They were separately applied to model relationships between the calculated seismic parameters and future earthquake occurrences.
+
+### In [2], Tehseen et al. conducted a meta-analysis of different prediction methods, including Rule-based systems, Fuzzy Expert Systems, Neuro-Fuzzy Systems and other Machine Learning algorithms, used over different geographical regions. Multiple publications using the above methods with various datasets and parameters were analyzed. The accuracies that were achieved in each of those publication were compared.
+
+### In [3], Geologists and Seismologists have conducted analysis on earthquakes that have taken place in countries like Turkey, Japan etc., with Japan being an earthquake and tsunami prone nation, a lot of insights can be drawn from its analysis.
+* * *
+## Knowledge Gap
+
+### Our project will be limited to the algorithms that we have learnt during this course and will also be considering tectonic plates as an important geographical attribute, which the previously mentioned projects have not.
+### Since this project deals with earthquakes and tectonic plates, it is important to explain what they actually are so that people from other backgrounds will get to understand more about these geographical phenomena.
+### Tectonic plates are massive irregularly shaped slabs of solid rock which slide past each other and at times, gets stuck which leads to large amounts of built-up energy, eventually being released, causing an earthquake.
+* * *
+## Purpose of Study and Objectives
+
+### The purpose of our study is to establish a relationship between earthquakes and tectonic plates, taking into account the magnitude and focal depth and see which tectonic plates have incurred most impact.
+### Hence, in order to be better informed on past earthquakes , as well as potential future occurrences, we aim to create a set of informational material easy for people to understand the impact of earthquakes all around the world.
+### We also aim to create few models that are able to predict the scale and depth of an earthquake and try to forecast disaster prone areas with respect to past occurrences.
+### The above mentioned tasks are to be fulfilled with the help of sufficient EDA, visualizations, regression, classification and time-series forecasting.
+* * *
+# Methods and Materials
+
+## Data Materials
+
+### The data to be used for this project has been retrieved from the website of the National Centers for Environmental Information, which is part of the National Oceanic and Atmospheric Administration wing.
+### Dataset Link - https://www.ngdc.noaa.gov/hazel/view/hazards/earthquake/search
+### Since this is actual data recorded by the government, we were not able to impute the data for taking missing values into account and by doing so, it might have had an impact on our models.
+### The data from this website will be split into 2 datasets.
+### The main dataset (~3670 records) will be used for visualization.
+### The subset (without NA values ; ~825 records) will be used for visualizing focal depth and for performing other tasks in this project.
+
+## Subset - Data Summary
+### It can be observed from the summary that most earthquakes were strong i.e. with magnitude between 6 and 7 and were of shallow depth i.e. focal depth between 0 and 70 km.
+
+## Dataset Description
+
+```{r echo=FALSE, out.width="100%"}
+knitr::include_graphics("datadesc.png",error = FALSE)
+```
+
+### Here we have provided a brief description about the columns we will be using for our project. The data as such is a mix of integer, numeric and factor data.
+### The most important geographic parameters from the dataset are focal depth (units in kilometer) and magnitude of an earthquake and the tectonic plate. These parameters will be playing a crucial role as most of our analysis is regarding these variables.
+### We have other secondary parameters such as country, continent, epicenter coordinates, etc.
+* * *
+## Methods
+
+### The work flow of our project is as follows. These will be explained in detail with the below chunks of code.
+
+### Required Package Installation
+### Data Manipulation
+### Visualization
+### Regression
+### Classification
+### Risk Raster Map (Time Series Forecasting)
+* * *
+## Required Package Installation
+
+### A number of packages were required for carrying out our analysis. The packages installed were used for a number of functions.
+### Its uses include data manipulation, correlation, visualization, regression, classification and time series forecasting.
+
+### List of packages used - 
+
+#### dplyr
+#### ggcorrplot, corrplot
+#### ggplot2, maps, grid, RColorBrewer
+#### caret, tidyverse, stats
+#### randomForest, gbm, rpart, rpart.plot, rattle
+#### forecast, ggshadow
+* * *
+## Data Manipulation
+
+### We have loaded the required data set using the read.csv() function.
+### Next, we removed the unwanted columns from the dataset and stored the resulting data set under new variables.
+### We have used loops to create new columns Mag_class & Depth_class for categorizing the earthquake occurrences based on the scale and focal depth of the earthquake.
+### We have converted the character columns into factor data type.
+### We also created a subset from the main dataset by removing the NA values for the columns which were required for performing our tasks.
+### The above steps were were executed in the code chunk given below -
+
+```{r}
+#Reading the main dataset
+data <- read.csv("C:/Users/Muthug/Desktop/INFO521 Intro to ML/fpquake.csv")
+
+#Removing unnecessary columns from main dataset
+df <- data[-c(2:8,14,16,18,20,22,24,26,28,30,32,34,36,38)]
+
+#Categorizing Earthquake Magnitude on the basis of Richter Scale
+df$Mag_class <- ifelse(df$Mag>=4&df$Mag<=4.9,"Light",NA)
+df$Mag_class <- ifelse(df$Mag>=5&df$Mag<=5.9,"Moderate",df$Mag_class)
+df$Mag_class <- ifelse(df$Mag>=6&df$Mag<=6.9,"Strong",df$Mag_class)
+df$Mag_class <- ifelse(df$Mag>=7&df$Mag<=7.9,"Major",df$Mag_class)
+df$Mag_class <- ifelse(df$Mag>=8&df$Mag<=9.9,"Great",df$Mag_class)
+
+#Categorizing Earthquakes on the basis of Focal Depth
+df$Depth_class <- ifelse(df$Focal_Depth_km>=0&df$Focal_Depth_km<=70,"Shallow",NA)
+df$Depth_class <- ifelse(df$Focal_Depth_km>=71&df$Focal_Depth_km<=300,"Intermediate",df$Depth_class)
+df$Depth_class <- ifelse(df$Focal_Depth_km>=301&df$Focal_Depth_km<=700,"Deep",df$Depth_class)
+
+#Converting columns into factor type of data 
+df$Country <- as.factor(df$Country)
+df$Continent <- as.factor(df$Continent)
+df$Tectonic_Plate <- as.factor(df$Tectonic_Plate)
+df$Mag_class <- as.factor(df$Mag_class)
+df$Depth_class <- as.factor(df$Depth_class)
+
+#Removing unwanted columns from main dataset
+df <- df[-c(8,10:18)]
+summary(df)
+
+#Reading the new subset
+data_2 <- read.csv("C:/Users/Muthug/Desktop/INFO521 Intro to ML/fpquake2.csv")
+
+#Removing unnecessary columns from subset
+df_2 <- data_2[-c(2:8,14,16,18,20,22,24,26,28,30,32,34,36,38)]
+
+#Categorizing Earthquake Magnitude on the basis of Richter Scale
+df_2$Mag_class <- ifelse(df_2$Mag>=4&df_2$Mag<=4.9,"Light",NA)
+df_2$Mag_class <- ifelse(df_2$Mag>=5&df_2$Mag<=5.9,"Moderate",df_2$Mag_class)
+df_2$Mag_class <- ifelse(df_2$Mag>=6&df_2$Mag<=6.9,"Strong",df_2$Mag_class)
+df_2$Mag_class <- ifelse(df_2$Mag>=7&df_2$Mag<=7.9,"Major",df_2$Mag_class)
+df_2$Mag_class <- ifelse(df_2$Mag>=8&df_2$Mag<=9.9,"Great",df_2$Mag_class)
+
+#Categorizing Earthquakes on the basis of Focal Depth
+df_2$Depth_class <- ifelse(df_2$Focal_Depth_km>=0&df_2$Focal_Depth_km<=70,"Shallow",NA)
+df_2$Depth_class <- ifelse(df_2$Focal_Depth_km>=71&df_2$Focal_Depth_km<=300,"Intermediate",df_2$Depth_class)
+df_2$Depth_class <- ifelse(df_2$Focal_Depth_km>=301&df_2$Focal_Depth_km<=700,"Deep",df_2$Depth_class)
+
+#Converting columns into factor type of data 
+df_2$Country <- as.factor(df_2$Country)
+df_2$Continent <- as.factor(df_2$Continent)
+df_2$Tectonic_Plate <- as.factor(df_2$Tectonic_Plate)
+df_2$Mag_class <- as.factor(df_2$Mag_class)
+df_2$Depth_class <- as.factor(df_2$Depth_class)
+
+#Removing unwanted columns from subset
+df_2 <- df_2[-c(8,10:18)]
+summary(df_2)
+```
+* * *
+## Visualization
+
+### Firstly, we created tables for some columns for categorizing the earthquakes on the basis of country, continent, tectonic plate, depth and magnitude classes.
+
+### Next, we used bar plots to highlight the number of occurrences in each continent, tectonic plate, magnitude and depth classes.
+
+### We also made use of box plots to understand the variations of magnitude with respect to each continent, magnitude and depth classes.
+
+### Further, we implemented line plots for identifying the number of earthquakes in each continent and also its magnitude over the years.
+
+### We used world  maps to visualise the epicenters of earthquakes with respect to magnitude and focal depth.
+
+### Additionally, we used a correlogram to establish a relationship among the variables used.
+```{r}
+library(ggplot2)
+
+#Creating tables
+df_Cont <- table(df$Continent)
+df_Nation <- table(df$Country)
+df_Plate <- table(df$Tectonic_Plate)
+df_Magclass <- table(df$Mag_class)
+df_Depthclass <- table(df$Depth_class)
+
+#Barplots for the tables created above
+bp_1 <- ggplot(df,aes(Continent))+geom_bar()+xlab("Continent")+ylab("Number of Earthquakes")+ggtitle("Number of Earthquake Occurences in each continent")
+
+bp_2 <- ggplot(df,aes(Tectonic_Plate))+geom_bar()+xlab("Tectonic Plate")+ylab("Number of Earthquakes")+ggtitle("Number of Earthquake Occurences in each tectonic plate")+
+  theme(axis.text.x = element_text(angle = 90))
+
+bp_3 <- ggplot(df,aes(Mag_class))+geom_bar()+xlab("Magnitude Class based on Richter scale")+ylab("Number of Earthquakes")+ggtitle("Number of Earthquake Occurences with respect to Magnitude class")
+
+bp_4 <- ggplot(df_2,aes(Depth_class))+geom_bar()+xlab("Depth Class based on Focal Depth of Earthquake")+ylab("Number of Earthquakes")+ggtitle("Number of Earthquake Occurences with respect to Depth class")
+
+library(dplyr)
+
+#To obtain yearly count of earthquake occurences
+
+yearly_counts <- df %>%
+  count(Year,Continent)
+
+#Line plots
+
+lp_1 <- ggplot(data=yearly_counts,aes(x=Year,y=n,color=Continent))+
+  ylab('Frequency')+
+  geom_line()+
+  facet_wrap(facets = vars(Continent))+
+  ggtitle("Number of Earthquake Occurences in each continent over the years")
+
+lp_2 <- ggplot(data=df,aes(x=Year,y=Mag))+
+  geom_line(aes(color=Continent),size=1)+
+  facet_wrap(facets = vars(Continent))+
+  ggtitle("Magnitude of earthquakes in each continent over the years")
+
+#Box plots
+
+box_1 <- ggplot(df,aes(x=Continent,y=Mag))+
+  geom_boxplot(aes(color=Continent))+
+  ylab("Magnitude")+
+  ggtitle("Trends of Magnitude in each continent")
+
+box_2 <- ggplot(df,aes(x=Mag_class,y=Mag))+
+  geom_boxplot(aes(color=Mag_class))+ylab("Magnitude")+
+  xlab('Magnitude Class')+guides(color=guide_legend(title="Magnitude Class"))+
+  ggtitle("Trends of Magnitude with respect to Magnitude class")
+
+box_3 <- ggplot(df_2,aes(x=Continent,y=Focal_Depth_km))+
+  geom_boxplot(aes(color=Continent))+
+  ylab("Focal Depth (km)")+
+  ggtitle("Trends of Focal Depth in each continent")
+
+box_4 <- ggplot(df_2,aes(x=Depth_class,y=Focal_Depth_km))+
+  geom_boxplot(aes(color=Depth_class))+ylab("Focal Depth")+
+  xlab('Depth Class')+guides(color=guide_legend(title="Depth Class"))+
+  ggtitle("Trends of Focal Depth with respect to Depth class")
+
+library(maps)
+library(grid)
+library(RColorBrewer)
+
+#World maps for depth and magnitude
+
+wmap <- borders("world",colour = "gray50",fill="gray50")
+eqmap <- ggplot() + wmap
+eqmap <- eqmap + geom_point(data=df,aes(x=as.numeric(Longitude),y=as.numeric(Latitude),color=Mag)) +ggtitle("Epicenters of Earthquakes on World Map")+
+  xlab("Longitude") + ylab("Latitude")
+myPalette <- colorRampPalette(rev(brewer.pal(11,"Spectral")))
+sc1 <- scale_colour_gradientn(colours = myPalette(100))
+map_1 <- eqmap + sc1
+
+library(ggplot2)
+library(maps)
+library(grid)
+
+wmap2 <- borders("world",colour = "darkgoldenrod1",fill="darkgoldenrod1")
+magdepmap <- ggplot() + wmap2
+  
+magdepmap <-  magdepmap +
+  geom_point(data = df_2, alpha = 0.25,aes(x = Longitude, y = Latitude, size = Mag, colour = Focal_Depth_km)) +
+  labs(x = NULL, y = NULL) +
+  scale_colour_gradient("Depth [km]", high = "red") +
+  scale_size("Magnitude") +
+  ggtitle("Combined Map Depicting Magnitude and Depth of Epicenters")
+  theme_classic() +
+  theme(axis.line = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        plot.margin=unit(c(3, 0, 0, 0),"mm"),
+        legend.text = element_text(size = 6),
+        legend.title = element_text(size = 8, face = "plain"),
+        panel.background = element_rect(fill='#D6E7EF'))
+
+wmap_depth <- borders("world",colour = "gray50",fill="gray50")
+eqmap_depth <- ggplot() + wmap_depth
+eqmap_depth <- eqmap_depth + geom_point(data=df_2,aes(x=as.numeric(Longitude),y=as.numeric(Latitude),color=Focal_Depth_km)) +ggtitle("Focal Depth of Epicenters of Earthquakes on World Map")+
+  xlab("Longitude") + ylab("Latitude")
+myPalette <- colorRampPalette(rev(brewer.pal(11,"Spectral")))
+sc1_depth <- scale_colour_gradientn(colours = myPalette(100))
+map_2 <- eqmap_depth + sc1_depth
+
+#correlation for entire df_2 dataset
+df_2_new <- df_2[,c(1,3,4,5,6,7,8)]
+
+library(ggcorrplot)
+library(corrplot)
+
+res <- cor(df_2_new)
+round(res,2)
+
+res_2 <- cor(df_2_new,use = "complete.obs")
+res_2
+
+corr <- round(cor(res),1)
+
+corr_eqplot <- ggcorrplot(corr,hc.order=TRUE,
+                          type="lower",
+                          lab=TRUE,
+                          lab_size = 3,
+                          method="circle",
+                          colors=c("red","white","green"),
+                          title="Correlogram of variables used from
+                          earthquake data",
+                          ggtheme = theme_bw)
+```
+* * *
+## Regression
+
+### We performed multiple linear regression to predict the magnitude of an earthquake that has taken place before 1976 using some of the variables present in the dataset.
+
+### We split the dataset into training and testing dataset.
+
+#### Training set comprises of data from 1976 till 2022.
+#### Testing set comprises of data from 1880 till 1975.
+
+### We first implemented backward approach to identify the statistically significant variables present in our model.
+
+### After doing so, we rebuilt the linear model to predict the magnitude of an earthquake that has taken place before 1976.
+```{r}
+library(car)
+library(caret)
+library(tidyverse)
+library(stats)
+
+model = lm (Mag~Year+Latitude+Longitude+Focal_Depth_km+Deaths+Injuries,data=df_2) #build initial model
+
+model #print model coefficients
+
+summary(model) #summarize model inferences
+
+#split data into training and testing
+
+df_2train <- df_2[ which(df_2$Year >= 1976 & df_2$Year <= 2022),]
+
+df_2test <- df_2[which(df_2$Year >= 1880 & df_2$Year <= 1975),]
+
+#rebuild linear model with significant variables
+
+model2_train = lm (Mag~Year+Focal_Depth_km+Latitude+Injuries,data=df_2train)
+
+model2_train #print model coefficients
+
+summary(model2_train) #summarize model inferences
+
+pred_2 = model2_train %>%
+  predict(df_2test) #predict magnitude for occurences before 1976
+
+pred_2 #print predicted values
+```
+* * *
+## Classification
+
+### We predicted the magnitude scale and depth of an earthquake using several classification algorithms namely logistic regression, boosting, random forest and decision tree.
+
+### We also computed the accuracy at which these models were able to classify the earthquakes.
+
+### We also printed the confusion matrices depicting the accuracy and other statistical information with respect to the particular model and also visualized the same using decision trees.
+```{r}
+#logistic regression for depth class
+set.seed(123) #for avoiding change in data
+logreg <- glm(Depth_class~Year+Latitude+Longitude+Focal_Depth_km+Deaths+Injuries+Mag , family = binomial, data = df_2train) #build logistic regression model
+summary(logreg) #summarize model inferences
+predict_logreg <- predict(logreg,df_2test,type="response") #select prediction type
+predict_logreg_values <- ifelse(predict_logreg >0.5, "Shallow","Intermediate") #predict the classes
+cmlogreg <- table(df_2test$Depth_class, predict_logreg_values) 
+#tabulate confusion matrix
+cmlogreg_acc <- (14+135)/nrow(df_2test) #compute accuracy
+
+#random forest for mag class
+library(randomForest)
+set.seed(123)
+rfmodel_eq <- randomForest(Mag_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data=df_2train) #build random forest model
+rfmodel_eq #print model information
+summary(rfmodel_eq) #summarize model inferences
+prediction_eq_rf <- predict(rfmodel_eq, newdata = df_2test) #predict values
+head(prediction_eq_rf) #compare with actual data
+rfmag <- table(prediction_eq_rf, df_2test$Mag_class) #print confusion matrix
+rfmag_acc <- (8+5+53+24+57)/nrow(df_2test) #compute accuracy
+
+#random forest for depth class
+library(randomForest)
+set.seed(123)
+rfmodel_eq_2 <- randomForest(Depth_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data=df_2train)
+rfmodel_eq_2
+summary(rfmodel_eq_2)
+prediction_eq_2_rf <- predict(rfmodel_eq_2, newdata = df_2test)
+head(prediction_eq_2_rf)
+rfdepth <- table(prediction_eq_2_rf, df_2test$Depth_class)
+rfdepth_acc <- (14+136)/nrow(df_2test)
+
+#boosting for magnitude class
+set.seed(123)
+library(gbm)
+model_gbm = gbm(Mag_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data = df_2train,distribution = "multinomial",cv.folds = 10,shrinkage = .01,n.minobsinnode = 10,n.trees = 500) # 500 tress to be built #build boosting model with default values
+summary(model_gbm) #summarize model inferences
+pred_test = predict.gbm(object = model_gbm,newdata = df_2test,n.trees = 500,   type = "response")# 500 tress to be built #predict classes
+head(pred_test)
+labels = colnames(pred_test)[apply(pred_test, 1, which.max)] #compare predictions with actual data
+result = data.frame(df_2test$Mag_class, labels)
+head(result)
+library(caret)
+cm = confusionMatrix(df_2test$Mag_class, as.factor(labels)) #compute confusion matrix
+
+
+#boosting for depth class
+set.seed(123)
+library(gbm)
+model_gbm_2 = gbm(Depth_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data = df_2train,distribution = "multinomial",cv.folds = 10,shrinkage = .01,n.minobsinnode = 10,n.trees = 500) # 500 tress to be built
+summary(model_gbm_2)
+pred_test_2 = predict.gbm(object = model_gbm_2,newdata = df_2test,n.trees = 500,   type = "response")# 500 tress to be built 
+head(pred_test_2)
+labels = colnames(pred_test_2)[apply(pred_test_2, 1, which.max)]
+result = data.frame(df_2test$Depth_class, labels)
+head(result)
+library(caret)
+cm_2 = confusionMatrix(df_2test$Depth_class, as.factor(labels))
+print(cm_2)
+
+#decision tree for depth class
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+dtree <- rpart(Depth_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data=df_2train,method="class",
+               control = rpart.control(minsplit=20,minbucket = 7,maxdepth = 10,usesurrogate = 2,xval = 10)) #formulate decision tree using default values
+dtree #print tree information
+
+
+#decision tree for mag class
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+dtree_2 <- rpart(Mag_class~Year+Latitude+Longitude+Mag+Focal_Depth_km+Deaths+Injuries,data=df_2train,method="class",
+               control = rpart.control(minsplit=20,minbucket = 7,maxdepth = 10,usesurrogate = 2,xval = 10))
+dtree_2
+```
+
+* * *
+## Risk Raster Map (Time Series Forecasting)
+
+### We have used the ARIMA (Autoregressive Integrated Moving Average) function for forecasting the coordinates of epicenters of future occurrences and visualized the same on raster maps.
+
+### We created a time series for the latitude and longitude using the starting date, ending date and frequency as parameters.
+
+### Based on the time series created, we used the ARIMA function for forecasting the coordinates.
+
+### The resulting coordinates were visualized on risk raster maps to highlight disaster prone zones.
+```{r}
+#raster map (forecasting disaster-prone zone)
+#latitude
+data_eu <- read.csv("C:/Users/Muthug/Desktop/INFO521 Intro to ML/fpquake_eu.csv") #read tectonic plate data
+library(forecast)
+set.seed(123)
+latitude_ts <- ts(data_eu$Latitude,start=c(1880,7),end=c(2022,9),frequency = 12) #create time series for latitude
+latitude_fit <- auto.arima(latitude_ts) #fit values using time series
+latitude_fc <- forecast(latitude_fit,25) #forecast the coordinates
+latitude_summ <- summary(latitude_fc) #summarize forecasts
+
+
+#longitude
+library(forecast)
+set.seed(123)
+longitude_ts <- ts(data_eu$Longitude,start=c(1880,7),end=c(2022,9),frequency = 12)
+longitude_fit <- auto.arima(longitude_ts)
+longitude_fc <- forecast(longitude_fit,25)
+longitude_summ <- summary(longitude_fc)
+
+#visualizing disaster prone areas using map
+#actual data points
+wmap_fc_1 <- borders("world",colour = "gray50",fill="gray50")
+eqmap_fc_1<- ggplot() + wmap_fc_1
+eqmap_fc_1 <- eqmap_fc_1 + geom_point(data=data_eu,aes(x=as.numeric(Longitude),y=as.numeric(Latitude),color=Mag)) +ggtitle("EU Plate Epicenters of Earthquakes on World Map")+
+  xlab("Longitude") + ylab("Latitude")
+myPalette_fc_1 <- colorRampPalette(rev(brewer.pal(11,"Spectral")))
+sc1_fc_1 <- scale_colour_gradientn(colours = myPalette_fc_1(100))
+raster_1 <- eqmap_fc_1 + sc1_fc_1
+
+#predicted points using arima
+library(ggshadow)
+data_eu_predict <- data_eu <- read.csv("C:/Users/Muthug/Desktop/INFO521 Intro to ML/fpquake_eu_predict.csv")
+
+wmap_fc_2 <- borders("world",colour = "gray50",fill="gray50")
+eqmap_fc_2<- ggplot() + wmap_fc_2
+eqmap_fc_2 <- eqmap_fc_2 + geom_glowpoint(data=data_eu_predict,aes(x=as.numeric(Longitude),y=as.numeric(Latitude)),color = "#6bb857",alpha=0.8,shadowcolor="#6bb857",shadowalpha=0.1) +ggtitle("Predicted Epicenters On Eurasian (EU) Plate")+
+  xlab("Longitude") + ylab("Latitude") + theme_void()
+raster_2 <- eqmap_fc_2
+```
+* * *
+# Results
+```{r}
+bp_1
+bp_2
+bp_3
+bp_4
+```
+
+### From the visuals above, it is evident that most number of earthquakes have taken place in Asia and the Eurasian plate.
+
+### From the visuals above, it can be observed that most earthquakes are strong i.e. Magnitude between 6 and 7.
+
+### Most earthquakes were shallow in depth i.e. Focal depth between 0 and 70 km.
+```{r}
+lp_1
+lp_2
+```
+
+### From the visuals above, it is evident that in every continent except Antarctica, there has been an increase in earthquake occurrences over the years and its magnitudes have been random over a period of time.
+
+```{r}
+box_1
+box_2
+box_3
+box_4
+```
+
+### From the visuals above, it can be oserved that Oceania has the highest average magnitude with most number of outliers and South America has the highest average focal depth with few outliers.
+```{r}
+map_1
+map_2
+magdepmap
+```
+
+### From the visuals above, the magnitudes of the earthquakes in the coastal areas and island nations is very high when compared with other areas. The focal depths of earthquakes in the coastal areas is very low.
+```{r}
+corr_eqplot
+```
+
+### Green color depicts positive correlation, Red color depicts negative correlation and white color depicts neutral correlation. From the visuals above, it is clearly understood that there exists a strong positive correlation between Deaths and Injuries and there exists a strong negative correlation between Magnitude and Latitude. Due to the presence of missing values and the dataset being retrieved from government sources, the dataset as such has a negative correlation overall.
+
+## Aggregate Functions for Statistic Details
+
+### Country with highest average magnitude
+
+```{r}
+eq_mean = aggregate(df_2[,6],by=list(df_2$Country),FUN=mean, na.rm=TRUE)
+eq_mean
+which.max(eq_mean$x) #Solomon Islands is 67th in the list ; 8.1 mag
+```
+
+### Tectonic plate with highest average magnitude
+
+```{r}
+eq_mean_2 = aggregate(df_2[,6],by=list(df_2$Tectonic_Plate),FUN=mean, na.rm=TRUE)
+eq_mean_2
+which.max(eq_mean_2$x) #NB Tectonic Plate is 17th in the list ; 7.6 mag
+```
+
+### Country with highest loss of lives
+
+```{r}
+eq_sum = aggregate(df_2[,7],by=list(df_2$Country),FUN=sum, na.rm=TRUE)
+eq_sum
+which.max(eq_sum$x) #China is 13th in the list ; 378810 lives lost
+```
+
+### Tectonic plate with highest loss of lives
+
+```{r}
+eq_sum_2 = aggregate(df_2[,7],by=list(df_2$Tectonic_Plate),FUN=sum, na.rm=TRUE)
+eq_sum_2
+which.max(eq_sum_2$x) #AM Tectonic Plate is 1st in the list ; 404851 lives lost
+```  
+
+### Eventhough Asia and the Eurasian plate have seen the highest number of earthquake occurrences,
+
+### From the above aggregate functions it can be observed that, NB (7.6) and AM plates have had the most impact in terms of average magnitude and total loss of lives (404851) respectively.
+
+### It can also be noted that earthquakes that have occured in the Solomon Islands has an average magnitude of 8.1 and China has had the most loss of lives at 377810.
+ 
+### It can be said that Asian and Eurasian plate earthquakes were of lesser intensity.
+* * *
+
+# Discussion
+
+## Multiple Linear Regression
+
+### Initially, a linear model was built to predict the magnitude of an earthquake based on all quantitative variables in the dataset. The predictor variables which are important for finding the best fit line to predict the magnitude of an earthquake were identified such as Focal depth, Latitude, Injuries etc. based on the p value of the variables in the dataset.
+
+### Once, the predictor variables were identified the linear model was rebuilt using these variables as predictor variables against the magnitude of an earthquake as response variable.
+
+### The p value of the predictor variables used in the second model are observed to be low (lesser than 0) indicating there is significant relationship between the response variable and predictor variables.
+
+### Adjusted R Square value of the second model (0.104) is also less than the adjusted R Square value of the first model (0.150) indicating that the second model explains most proportion of the data.
+
+```{r}
+plot(model2_train,1)
+plot(model2_train,2)
+```
+
+### The Residuals vs Fitted Plot of the model gives almost a horizontal red line without distinct patterns indicating a linear relationship between predictor variables and the response variable in the model.
+
+### The Normal Q-Q Plot of the model almost follow a straight dashed line indicating that the residual errors in the model are normally distributed.
+
+```{r}
+summary(pred_2)
+summary(df_2test$Mag)
+```
+
+### Upon deriving the summary for our predicted magnitudes and when we compare it with the actual magnitudes being recorded, the 1st Quartile values differed by a small margin of 0.012. The average magnitude for the predicted and actual values differed by 0.357.
+
+* * *
+
+## Logistic Regression for Depth Class
+```{r}
+cmlogreg #confusion matrix for model
+cmlogreg_acc #accuracy of model
+```
+
+## Random Forest for Magnitude Class
+```{r}
+rfmag #confusion matrix for model
+rfmag_acc #accuracy of model
+```
+
+## Random Forest for Depth Class
+```{r}
+rfdepth #confusion matrix for model
+rfdepth_acc #accuracy of model
+```
+
+## Boosting for Magnitude Class
+```{r}
+print(cm) #confusion matrix for model
+```
+
+## Boosting for Depth Class
+```{r}
+print(cm_2) #confusion matrix for model
+```
+
+# Summary of Model Accuracy
+```{r echo=FALSE, out.width="100%"}
+knitr::include_graphics("classifyresults.png",error = FALSE)
+```
+
+## We have classified the earthquake in terms of its magnitude scale and its focal depth. We used machine learning algorithms like random forest and logistic regression for doing so. We also introduced boosting since it is a very powerful algorithm, providing better accuracies when compared with the other models being implemented.
+
+## We had compared our Random forest model with [1] Asim, Basit et al. their model had obtained an accuracy of 62%, where as our models achieved full accuracy for classifying depth-class and 98% accuracy for classifying magnitude-class.
+
+* * *
+
+## Decision Tree for Depth Class
+```{r}
+#print basic and detailed decision trees
+par(xpd=NA,mar=rep(0.7,4))
+plot(dtree,compress = TRUE)
+text(dtree,cex=0.7,use.n = TRUE,fancy=FALSE,all=TRUE)
+library(rpart.plot)
+prp(dtree,faclen=0,box.palette="Reds",cex=0.8,extra=1)
+```
+
+## Decision Tree for Magnitude Class
+```{r}
+#print basic and detailed decision trees
+par(xpd=NA,mar=rep(0.7,4))
+plot(dtree_2,compress = TRUE)
+text(dtree_2,cex=0.7,use.n = TRUE,fancy=FALSE,all=TRUE)
+library(rpart.plot)
+prp(dtree_2,faclen=0,box.palette="Reds",cex=0.8,extra=1)
+```
+
+### We also constructed a decision tree in order to check whether an earthquake is of a particular magnitude scale or depth type. The trees we obtained comply with the actual definitions of those terms.
+
+* * *
+
+## Risk Raster Maps
+```{r}
+raster_1
+raster_2
+```
+
+### Finally we computed a risk raster map which is a low quality pixel map used for visualizing our forecasted epicenter coordinates (disaster prone zones). We forecasted the epicenter coordinates for 25 instances and we were able to observe that most of it were plotted in the Afghan Hindukush mountain range which in reality is prone to earthquakes. These notable lie in Eurasian plate whose actual data was used to forecast the epicenter coordinates.
+
+* * *
+
+# Conclusion
+
+## To sum up our work,
+
+### The Eu, AM and NB plates had much impact due to earthquakes.
+
+### Countries like Solomon Islands, China etc. had much loss of lives and intense earthquakes.
+
+### The analysis and prediction of the earthquakes using location-based historical data is possible given a sufficient volume of data.
+
+### The various tectonic plates and its boundaries gave a better understanding on how earthquakes sites along these boundaries will allow us to make educated estimates on the magnitudes and depths of the earthquakes.
+
+### Each tectonic plate has its own patterns of seismic activity, which was thoroughly analyzed statistically and visually.
+
+### All this opens up avenues in creating a foundation for the use of tectonic plate locations, their boundaries and geographical variations in the use of forecasting and predicting the periodicity of the earthquakes along with its intensity and possible epicentres.
+
+* * *
+
+#### We as citizens should always remain high on alert.
+
+#### We should not panic whenever a natural disaster occurs and must not hesitate to help others in need.
+
+#### We must always mind the crack. 
+
+#### We must be prepared, aware and ready.
+
+* * *
+
+#  References (Paper Links)
+
+### https://link.springer.com/article/10.1007/s11069-020-04125-2
+
+### https://www.researchgate.net/profile/Khawaja-Asim/publication/307951466_Earthquake_magnitude_prediction_in_Hindukush_region_using_machine_learning_techniques/links/59ed755eaca272cddde0657a/Earthquake-magnitude-prediction-in-Hindukush-region-using-machine-learning-techniques.pdf
+
+### https://www.mdpi.com/2071-1050/12/6/2420
+
+* * *
+
+# Thank You
+
+* * *

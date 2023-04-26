@@ -1,0 +1,42 @@
+---
+title: "Project Proposal 2"
+author: "Tharun Murugesh R & Shanmuganathan C"
+date: "29/09/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# INFO521 – INTRODUCTION TO MACHINE LEARNING
+
+# FINAL PROJECT – PROPOSAL 2
+
+## Title
+### Detection and Visualization of Earthquake Data
+
+## Names
+### THARUN MURUGESH RAJESWARAN,
+### SHANMUGANATHAN CHOKKALINGAM
+
+## Brief Description
+
+### Earthquakes cause large amounts of destruction to life and property every single year across the world. Damage that isn't directly caused by seismic activity can also occur due to other events like floods, landslides, tsunamis, avalanches etc. Despite technological advances that allow structures to withstand an earthquake, it still remains a feared natural disaster. Hence, in order to be better informed on past earthquakes, as well potential future occurences, we aim to create a set of informational material composed of location-wise historical earthquale data. We also aim to create a model that is capable of predicting future seismic activity in each tectonic plate region.
+
+## Data Required
+
+### Data to be used for this project is from the website of the National Centers for Environmental Information, which is part of the National Oceanic and Atmospheric Administration wing.
+
+### Dataset Link  - https://www.ngdc.noaa.gov/hazel/view/hazards/earthquake/search
+
+## List of Tasks & Corresponding Analysis
+
+### •	To perform proper data pre-processing for conducting analysis.
+### •	To seggregate observations with respect to tectonic plates.
+### •	To perform EDA and visualization plots based on earthquake attributes such as magnitude, depth, injuries, deaths, loss of property etc.
+### •	To perform classification algorithms for classifying the earthquake occurences according to severity (Richter Scale)
+### •	To perform certain regression algorithms based on certain significant variables present in dataset, to see which factors cause most impact whith respect to an earthquake and to see which tectonic plates have caused most impact.
+### •	To try and make use of Time Series algorithms such as ARIMA and SARIMA for forecasting magnitude and depth of earthquakes for a particular region bound by a tectonic plate.
+### •	To predict what would have happened before 1901 depending on past data.
+### •	To highlight and visualize risky areas using earthquake risk raster in map.
